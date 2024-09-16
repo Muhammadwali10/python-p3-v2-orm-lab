@@ -22,7 +22,8 @@ class Review:
         if isinstance(year, int) and year >= 2000:
             self._year = year
         else:
-            raise ValueError("Year must be an integer greater than or equal to 2000")
+            raise ValueError(
+                "Year must be an integer greater than or equal to 2000")
 
     @property
     def summary(self):
@@ -34,6 +35,28 @@ class Review:
             self._summary = summary
         else:
             raise ValueError("Summary must be a non-empty string")
+
+    @property
+    def employee_id(self):
+        return self._employee_id
+
+    @employee_id.setter
+    def employee_id(self, employee_id):
+        if self.validate_employee_id(employee_id):
+            self._employee_id = employee_id
+        else:
+            raise ValueError("Invalid employee_id")
+
+    @staticmethod
+    def validate_employee_id(employee_id):
+        """Check if the employee_id exists in the employees table."""
+        sql = """
+            SELECT COUNT(*)
+            FROM employees
+            WHERE id = ?
+        """
+        count = CURSOR.execute(sql, (employee_id,)).fetchone()[0]
+        return count > 0
 
     def __repr__(self):
         return (
@@ -57,7 +80,7 @@ class Review:
 
     @classmethod
     def drop_table(cls):
-        """ Drop the table that persists Review  instances """
+        """ Drop the table that persists Review instances """
         sql = """
             DROP TABLE IF EXISTS reviews;
         """
@@ -83,7 +106,7 @@ class Review:
         review = cls(year, summary, employee_id)
         review.save()
         return review
-   
+
     @classmethod
     def instance_from_db(cls, row):
         """Return an Review instance having the attribute values from the table row."""
@@ -97,13 +120,12 @@ class Review:
             review.id = row[0]
             cls.all[review.id] = review
         return review
-   
 
     @classmethod
     def find_by_id(cls, id):
         """Return a Review instance having the attribute values from the table row."""
         sql = """
-            SELECT *
+ SELECT *
             FROM reviews
             WHERE id = ?
         """
@@ -117,7 +139,8 @@ class Review:
             SET year = ?, summary = ?, employee_id = ?
             WHERE id = ?
         """
-        CURSOR.execute(sql, (self.year, self.summary, self.employee_id, self.id))
+        CURSOR.execute(sql, (self.year, self.summary,
+                       self.employee_id, self.id))
         CONN.commit()
 
     def delete(self):
@@ -141,4 +164,3 @@ class Review:
         """
         rows = CURSOR.execute(sql).fetchall()
         return [cls.instance_from_db(row) for row in rows]
-
